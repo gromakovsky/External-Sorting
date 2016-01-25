@@ -1,3 +1,5 @@
+import io
+import itertools
 import tempfile
 import unittest
 
@@ -47,12 +49,21 @@ class TestKWayMerge(unittest.TestCase):
             merge_sort_2_blocks(input_file, output_file)
             self._check_sorted(input_file, output_file)
 
-    def _check_sorted(self, source, res):
+    def _check_sorted(self, source: io.BufferedIOBase, res: io.BufferedIOBase):
+        source.seek(0)
+        source_content = list(itertools.repeat(0, 2**20))
+        for v in read_content(source):
+            source_content[hash(v) % 2**20] += 1
+
         res.seek(0)
+        res_content = list(itertools.repeat(0, 2**20))
         prev = None
         for cur in read_content(res):
+            res_content[hash(cur) % 2**20] += 1
             self.assertTrue(prev is None or prev <= cur)
             prev = cur
+
+        self.assertTrue(source_content == res_content, 'Content differs')
 
 
 if __name__ == '__main__':
