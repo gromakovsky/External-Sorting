@@ -1,19 +1,21 @@
 import io
 import itertools
-import tempfile
 import unittest
 
 from serialization import read_content, write_content
-from sort import merge_sort_2_blocks
+from sort import merge_sort_stupid
+from util import tmp_file
 
 
-class TestKWayMerge(unittest.TestCase):
+class TestStupidMergeSort(unittest.TestCase):
+
+    memory_size = 2**15
 
     def test_empty(self):
         self._test_simple([])
 
     def test_single(self):
-        self._test_simple([1.5])
+        self._test_simple([-10])
 
     def test_simple1(self):
         self._test_simple([
@@ -37,16 +39,15 @@ class TestKWayMerge(unittest.TestCase):
             4,
             -5,
             6.6,
-            4.5,
             3,
             -9000,
-        ])
+        ] * 2**17)
 
     def _test_simple(self, values):
-        with tempfile.TemporaryFile() as input_file, tempfile.TemporaryFile() as output_file:
+        with tmp_file() as input_file, tmp_file() as output_file:
             write_content(input_file, values)
             input_file.seek(0)
-            merge_sort_2_blocks(input_file, output_file)
+            merge_sort_stupid(input_file, output_file, self.memory_size)
             self._check_sorted(input_file, output_file)
 
     def _check_sorted(self, source: io.BufferedIOBase, res: io.BufferedIOBase):
