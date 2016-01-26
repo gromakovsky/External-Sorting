@@ -1,7 +1,7 @@
 import heapq
 import io
 
-from serialization import content_length, read_content, write_content
+from serialization import content_length, go_to_pos, read_content, write_content
 from util import tmp_file
 
 
@@ -15,7 +15,7 @@ def merge_sort_stupid(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_si
         count = content_length(fin, preserve_pos=False)
 
     if count <= memory_size:
-        fin.seek(left)
+        go_to_pos(fin, left)
         write_content(fout, sorted(read_content(fin, count=count)), batch_size=memory_size)
         return
 

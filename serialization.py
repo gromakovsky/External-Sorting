@@ -26,6 +26,10 @@ def content_length(f: io.BufferedIOBase, preserve_pos=True):
     return res
 
 
+def go_to_pos(f: io.BufferedIOBase, i: int):
+    f.seek(i * _VALUE_SIZE)
+
+
 def read_content(f: io.BufferedIOBase, count=None, batch_size=_DEFAULT_BATCH_SIZE):
     while True:
         values_to_read = batch_size if count is None else min(count, batch_size)
