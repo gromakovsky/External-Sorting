@@ -2,12 +2,15 @@ import io
 from array import array
 
 
-_BATCH_SIZE = 2 ** 22
 _VALUE_SIZE = 4
+# all units below and in other files are values, i. e. count=100 means «read 100 values»
+_DEFAULT_BATCH_SIZE = 2 ** 22
 
 
 def _make_array():
-    return array('f')
+    res = array('f')
+    assert res.itemsize == _VALUE_SIZE
+    return res
 
 
 def content_length(f: io.BufferedIOBase, preserve_pos=True):
@@ -23,10 +26,10 @@ def content_length(f: io.BufferedIOBase, preserve_pos=True):
     return res
 
 
-def read_content(f: io.BufferedIOBase, count=None):
+def read_content(f: io.BufferedIOBase, count=None, batch_size=_DEFAULT_BATCH_SIZE):
     while True:
-        size = _BATCH_SIZE if count is None else min(count * _VALUE_SIZE, _BATCH_SIZE)
-        b = f.read(size)
+        values_to_read = batch_size if count is None else min(count, batch_size)
+        b = f.read(values_to_read * _VALUE_SIZE)
         if not b:
             return
 
@@ -40,12 +43,13 @@ def read_content(f: io.BufferedIOBase, count=None):
             return
 
 
-def write_content(f: io.BufferedIOBase, values):
+def write_content(f: io.BufferedIOBase, values, batch_size=_DEFAULT_BATCH_SIZE):
     arr = _make_array()
     for x in values:
         arr.append(x)
-        if len(arr) >= _BATCH_SIZE / _VALUE_SIZE:
+        if len(arr) >= batch_size:
             arr.tofile(f)
+            del arr[:]
 
     if arr:
         arr.tofile(f)
