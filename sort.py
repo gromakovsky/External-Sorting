@@ -32,6 +32,18 @@ def merge_sort_stupid(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_si
                       batch_size=memory_size)
 
 
+def _to_sorted_blocks(fin: io.BufferedIOBase, memory_size):
+    while True:
+        sorted_values = sorted(read_content(fin, memory_size))
+        if not sorted_values:
+            break
+
+        f = tmp_file()
+        write_content(f, sorted_values)
+        f.seek(0)
+        yield f
+
+
 def _merge_blocks(tmp_files, fout: io.BufferedIOBase, memory_size: int):
     # let's make output buffer slightly larger
     # we can use 3 times `memory_size` for buffers
@@ -44,32 +56,11 @@ def _merge_blocks(tmp_files, fout: io.BufferedIOBase, memory_size: int):
 
 # The same same is true about `memory_size` here
 def merge_sort_k_blocks(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_size: int):
-    tmp_files = []
-    while True:
-        sorted_values = sorted(read_content(fin, memory_size))
-        if not sorted_values:
-            break
-
-        f = tmp_file()
-        write_content(f, sorted_values)
-        f.seek(0)
-        tmp_files.append(f)
-
-    _merge_blocks(tmp_files, fout, memory_size)
+    _merge_blocks(list(_to_sorted_blocks(fin, memory_size)), fout, memory_size)
 
 
 def merge_sort_k_blocks_two_passes(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_size: int):
-    tmp_files = []
-    while True:
-        sorted_values = sorted(read_content(fin, memory_size))
-        if not sorted_values:
-            break
-
-        f = tmp_file()
-        write_content(f, sorted_values)
-        f.seek(0)
-        tmp_files.append(f)
-
+    tmp_files = list(_to_sorted_blocks(fin, memory_size))
     if len(tmp_files) < 10:
         larger_tmp_files = tmp_files
     else:
