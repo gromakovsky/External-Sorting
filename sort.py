@@ -1,5 +1,6 @@
 import heapq
 import io
+from math import sqrt
 
 from serialization import content_length, go_to_pos, read_content, write_content
 from util import tmp_file
@@ -9,6 +10,8 @@ from util import tmp_file
 # So approximately 3 * `memory_size` values fit into memory.
 # It's also important that buffering stores float using 4 bytes for each one, while sorting operates on python floats,
 # which are much fatter, but let's ignore it.
+# P. S. It holds for each function
+
 def merge_sort_stupid(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_size: int, left=0, count=None):
     fout.seek(0)
     if count is None:
@@ -29,6 +32,14 @@ def merge_sort_stupid(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_si
                       batch_size=memory_size)
 
 
+def _merge_blocks(tmp_files, fout: io.BufferedIOBase, memory_size: int):
+    # let's make output buffer slightly larger
+    # we can use 3 times `memory_size` for buffers
+    buffer_size = 3 * memory_size // (len(tmp_files) + 2)
+    generators = [read_content(f, batch_size=buffer_size) for f in tmp_files]
+    write_content(fout, heapq.merge(*generators), batch_size=2 * buffer_size)
+
+
 # The same same is true about `memory_size` here
 def merge_sort_k_blocks(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_size: int):
     tmp_files = []
@@ -42,12 +53,30 @@ def merge_sort_k_blocks(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_
         f.seek(0)
         tmp_files.append(f)
 
-    # let's make output buffer slightly larger
-    # we can use 3 times `memory_size` for buffers
-    buffer_size = 3 * memory_size // (len(tmp_files) + 2)
-    generators = [read_content(f, batch_size=buffer_size) for f in tmp_files]
-    write_content(fout, heapq.merge(*generators), batch_size=2 * buffer_size)
+    _merge_blocks(tmp_files, fout, memory_size)
 
 
 def merge_sort_k_blocks_two_passes(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_size: int):
-    pass
+    tmp_files = []
+    while True:
+        sorted_values = sorted(read_content(fin, memory_size))
+        if not sorted_values:
+            break
+
+        f = tmp_file()
+        write_content(f, sorted_values)
+        f.seek(0)
+        tmp_files.append(f)
+
+    if len(tmp_files) < 10:
+        larger_tmp_files = tmp_files
+    else:
+        larger_tmp_files = []
+        larger_blocks_count = int(sqrt(len(tmp_files)))
+        for i in range(0, len(tmp_files), larger_blocks_count):
+            larger_f = tmp_file()
+            _merge_blocks(tmp_files[i:min(len(tmp_files), i + larger_blocks_count)], larger_f, memory_size)
+            larger_f.seek(0)
+            larger_tmp_files.append(larger_f)
+
+    _merge_blocks(larger_tmp_files, fout, memory_size)
