@@ -8,7 +8,7 @@ from hypothesis import given
 import hypothesis.strategies as st
 
 from serialization import read_content, write_content
-from sort import merge_sort_stupid, merge_sort_k_blocks
+from sort import merge_sort_stupid, merge_sort_k_blocks, merge_sort_k_blocks_two_passes
 from util import tmp_file
 
 
@@ -116,6 +116,23 @@ class TestBlocksSort(TestSort):
     @staticmethod
     def _sort(*args, **kwargs):
         return merge_sort_k_blocks(*args, **kwargs)
+
+
+class Test2PassesBlocksSort(TestSort):
+
+    def test_predefined(self):
+        self._launch_predefined_tests(self._sort)
+
+    def test_random_big(self):
+        self._test_simple(self._random_values(), self._sort)
+
+    @given(st.lists(st.floats(allow_nan=False), average_size=2**10))
+    def test_random(self, values):
+        self._test_simple(values, self._sort, memory_size=2**7)
+
+    @staticmethod
+    def _sort(*args, **kwargs):
+        return merge_sort_k_blocks_two_passes(*args, **kwargs)
 
 
 if __name__ == '__main__':

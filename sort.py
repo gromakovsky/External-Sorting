@@ -47,3 +47,7 @@ def merge_sort_k_blocks(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_
     buffer_size = 3 * memory_size // (len(tmp_files) + 2)
     generators = [read_content(f, batch_size=buffer_size) for f in tmp_files]
     write_content(fout, heapq.merge(*generators), batch_size=2 * buffer_size)
+
+
+def merge_sort_k_blocks_two_passes(fin: io.BufferedIOBase, fout: io.BufferedIOBase, memory_size: int):
+    pass
