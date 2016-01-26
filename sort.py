@@ -38,6 +38,8 @@ def _merge_blocks(tmp_files, fout: io.BufferedIOBase, memory_size: int):
     buffer_size = 3 * memory_size // (len(tmp_files) + 2)
     generators = [read_content(f, batch_size=buffer_size) for f in tmp_files]
     write_content(fout, heapq.merge(*generators), batch_size=2 * buffer_size)
+    for f in tmp_files:
+        f.close()
 
 
 # The same same is true about `memory_size` here
@@ -78,5 +80,8 @@ def merge_sort_k_blocks_two_passes(fin: io.BufferedIOBase, fout: io.BufferedIOBa
             _merge_blocks(tmp_files[i:min(len(tmp_files), i + larger_blocks_count)], larger_f, memory_size)
             larger_f.seek(0)
             larger_tmp_files.append(larger_f)
+
+        for tmp_f in tmp_files:
+            tmp_f.close()
 
     _merge_blocks(larger_tmp_files, fout, memory_size)
