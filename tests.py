@@ -14,13 +14,13 @@ from util import tmp_file
 
 class TestSort(unittest.TestCase):
 
-    _memory_size = 2**15
+    _memory_size = 2**14
 
     def setUp(self):
         self._start = time.time()
 
     def tearDown(self):
-        print('{}: {:.2f} seconds'.format(self.__class__.__name__, time.time() - self._start))
+        print('{}: {:.2f} seconds'.format(self.__class__.__name__, time.time() - self._start), flush=True)
 
     def _predefined_values(self):
         yield []
@@ -45,21 +45,21 @@ class TestSort(unittest.TestCase):
             6.6,
             3,
             -9000,
-        ], 2**16))
+        ], 2**15))
 
-    def _random_values(self, n=2**20):
+    def _random_values(self, n=2**17):
         for i in range(n):
             yield random.random()
 
     def _launch_predefined_tests(self, sort_f):
         for values in self._predefined_values():
-            self._test_simple(values, merge_sort_stupid)
+            self._test_simple(values, sort_f)
 
     def _test_simple(self, values, sort_f, memory_size=None):
         with tmp_file() as input_file, tmp_file() as output_file:
             write_content(input_file, values)
             input_file.seek(0)
-            sort_f(input_file, output_file, self._memory_size if memory_size is None else memory_size)
+            sort_f(input_file, output_file, memory_size=self._memory_size if memory_size is None else memory_size)
             self._check_sorted(input_file, output_file)
 
     def _check_sorted(self, source: io.BufferedIOBase, res: io.BufferedIOBase):
@@ -87,27 +87,35 @@ class TestSort(unittest.TestCase):
 class TestStupidSort(TestSort):
 
     def test_predefined(self):
-        self._launch_predefined_tests(merge_sort_stupid)
+        self._launch_predefined_tests(self._sort)
 
     def test_random_big(self):
-        self._test_simple(self._random_values(), merge_sort_stupid)
+        self._test_simple(self._random_values(), self._sort)
 
-    @given(st.lists(st.floats(allow_nan=False), average_size=2**14))
+    @given(st.lists(st.floats(allow_nan=False), average_size=2**10))
     def test_random(self, values):
-        self._test_simple(values, merge_sort_stupid, memory_size=2**9)
+        self._test_simple(values, self._sort, memory_size=2**7)
+
+    @staticmethod
+    def _sort(*args, **kwargs):
+        return merge_sort_stupid(*args, **kwargs)
 
 
 class TestBlocksSort(TestSort):
 
     def test_predefined(self):
-        self._launch_predefined_tests(merge_sort_k_blocks)
+        self._launch_predefined_tests(self._sort)
 
     def test_random_big(self):
-        self._test_simple(self._random_values(), merge_sort_k_blocks)
+        self._test_simple(self._random_values(), self._sort)
 
-    @given(st.lists(st.floats(allow_nan=False), average_size=2**14))
+    @given(st.lists(st.floats(allow_nan=False), average_size=2**10))
     def test_random(self, values):
-        self._test_simple(values, merge_sort_k_blocks, memory_size=2**9)
+        self._test_simple(values, self._sort, memory_size=2**7)
+
+    @staticmethod
+    def _sort(*args, **kwargs):
+        return merge_sort_k_blocks(*args, **kwargs)
 
 
 if __name__ == '__main__':
