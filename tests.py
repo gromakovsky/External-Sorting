@@ -4,6 +4,9 @@ import itertools
 import random
 import unittest
 
+from hypothesis import given
+import hypothesis.strategies as st
+
 from serialization import read_content, write_content
 from sort import merge_sort_stupid, merge_sort_k_blocks
 from util import tmp_file
@@ -11,7 +14,7 @@ from util import tmp_file
 
 class TestSort(unittest.TestCase):
 
-    _memory_size = 2**16
+    _memory_size = 2**15
 
     def setUp(self):
         self._start = time.time()
@@ -42,7 +45,7 @@ class TestSort(unittest.TestCase):
             6.6,
             3,
             -9000,
-        ], 2**19))
+        ], 2**16))
 
     def _random_values(self, n=2**20):
         for i in range(n):
@@ -52,11 +55,11 @@ class TestSort(unittest.TestCase):
         for values in self._predefined_values():
             self._test_simple(values, merge_sort_stupid)
 
-    def _test_simple(self, values, sort_f):
+    def _test_simple(self, values, sort_f, memory_size=None):
         with tmp_file() as input_file, tmp_file() as output_file:
             write_content(input_file, values)
             input_file.seek(0)
-            sort_f(input_file, output_file, self._memory_size)
+            sort_f(input_file, output_file, self._memory_size if memory_size is None else memory_size)
             self._check_sorted(input_file, output_file)
 
     def _check_sorted(self, source: io.BufferedIOBase, res: io.BufferedIOBase):
@@ -86,8 +89,12 @@ class TestStupidSort(TestSort):
     def test_predefined(self):
         self._launch_predefined_tests(merge_sort_stupid)
 
-    def test_random(self):
+    def test_random_big(self):
         self._test_simple(self._random_values(), merge_sort_stupid)
+
+    @given(st.lists(st.floats(allow_nan=False), average_size=2**14))
+    def test_random(self, values):
+        self._test_simple(values, merge_sort_stupid, memory_size=2**9)
 
 
 class TestBlocksSort(TestSort):
@@ -95,8 +102,12 @@ class TestBlocksSort(TestSort):
     def test_predefined(self):
         self._launch_predefined_tests(merge_sort_k_blocks)
 
-    def test_random(self):
+    def test_random_big(self):
         self._test_simple(self._random_values(), merge_sort_k_blocks)
+
+    @given(st.lists(st.floats(allow_nan=False), average_size=2**14))
+    def test_random(self, values):
+        self._test_simple(values, merge_sort_k_blocks, memory_size=2**9)
 
 
 if __name__ == '__main__':
