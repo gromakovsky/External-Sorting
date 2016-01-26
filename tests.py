@@ -1,5 +1,7 @@
+import time
 import io
 import itertools
+import random
 import unittest
 
 from serialization import read_content, write_content
@@ -7,33 +9,31 @@ from sort import merge_sort_stupid, merge_sort_k_blocks
 from util import tmp_file
 
 
-class TestStupidMergeSort(unittest.TestCase):
+class TestSort(unittest.TestCase):
 
-    memory_size = 2**18
+    _memory_size = 2**16
 
-    def test_empty(self):
-        self._test_simple([])
+    def setUp(self):
+        self._start = time.time()
 
-    def test_single(self):
-        self._test_simple([-10])
+    def tearDown(self):
+        print('{}: {:.2f} seconds'.format(self.__class__.__name__, time.time() - self._start))
 
-    def test_simple1(self):
-        self._test_simple([
+    def _predefined_values(self):
+        yield []
+        yield [-10]
+        yield [
             1.6,
             2.5,
             1,
             -1,
-        ])
-
-    def test_simple2(self):
-        self._test_simple([
+        ]
+        yield [
             -100.,
             -350.,
             -200.,
-        ])
-
-    def test_simple3(self):
-        self._test_simple([
+        ]
+        yield itertools.chain.from_iterable(itertools.repeat([
             1.6,
             3.5,
             99,
@@ -42,14 +42,21 @@ class TestStupidMergeSort(unittest.TestCase):
             6.6,
             3,
             -9000,
-        ] * 2**22)
+        ], 2**19))
 
-    def _test_simple(self, values):
+    def _random_values(self, n=2**20):
+        for i in range(n):
+            yield random.random()
+
+    def _launch_predefined_tests(self, sort_f):
+        for values in self._predefined_values():
+            self._test_simple(values, merge_sort_stupid)
+
+    def _test_simple(self, values, sort_f):
         with tmp_file() as input_file, tmp_file() as output_file:
             write_content(input_file, values)
             input_file.seek(0)
-            merge_sort_stupid(input_file, output_file, self.memory_size)
-            # merge_sort_k_blocks(input_file, output_file, self.memory_size)
+            sort_f(input_file, output_file, self._memory_size)
             self._check_sorted(input_file, output_file)
 
     def _check_sorted(self, source: io.BufferedIOBase, res: io.BufferedIOBase):
@@ -72,6 +79,24 @@ class TestStupidMergeSort(unittest.TestCase):
             prev = cur
 
         self.assertTrue(source_content == res_content, 'Content differs')
+
+
+class TestStupidSort(TestSort):
+
+    def test_predefined(self):
+        self._launch_predefined_tests(merge_sort_stupid)
+
+    def test_random(self):
+        self._test_simple(self._random_values(), merge_sort_stupid)
+
+
+class TestBlocksSort(TestSort):
+
+    def test_predefined(self):
+        self._launch_predefined_tests(merge_sort_k_blocks)
+
+    def test_random(self):
+        self._test_simple(self._random_values(), merge_sort_k_blocks)
 
 
 if __name__ == '__main__':
