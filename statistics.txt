@@ -1,0 +1,10 @@
+1. Memory: 2^18, values: 2^22.
+Predefined: Test2PassesBlocksSort: 10.08 seconds, TestBlocksSort: 8.75 seconds, TestStupidSort: 12.96 seconds.
+Random: Test2PassesBlocksSort: 11.01 seconds, TestBlocksSort: 9.39 seconds, TestStupidSort: 14.31 seconds.
+2. Memory: 2^17, values: 2^25.
+Predefined: Test2PassesBlocksSort: 94.85 seconds, TestBlocksSort: 85.69 seconds, TestStupidSort: 160.90 seconds.
+Random: Test2PassesBlocksSort: 94.79 seconds, TestBlocksSort: 81.80 seconds, TestStupidSort: 174.33 seconds.
+3. Memory: 2^10, values: 2^21.
+Predefined: Test2PassesBlocksSort: 6.82 seconds, TestBlocksSort: 9.73 seconds, TestStupidSort: 13.45 seconds.
+Random: Test2PassesBlocksSort: 5.94 seconds, TestBlocksSort: 9.40 seconds, TestStupidSort: 13.59 seconds.
+
