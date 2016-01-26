@@ -14,7 +14,7 @@ from util import tmp_file
 
 class TestSort(unittest.TestCase):
 
-    _memory_size = 2**14
+    _memory_size = 2**18
 
     def setUp(self):
         self._start = time.time()
@@ -45,9 +45,9 @@ class TestSort(unittest.TestCase):
             6.6,
             3,
             -9000,
-        ], 2**15))
+        ], 2**19))
 
-    def _random_values(self, n=2**17):
+    def _random_values(self, n=2**22):
         for i in range(n):
             yield random.random()
 
