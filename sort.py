@@ -40,7 +40,7 @@ def _to_sorted_blocks(fin: io.BufferedIOBase, memory_size):
 
         f = tmp_file()
         write_content(f, sorted_values)
-        f.seek(0)
+        f.close()
         yield f
 
 
@@ -48,6 +48,11 @@ def _merge_blocks(tmp_files, fout: io.BufferedIOBase, memory_size: int):
     # let's make output buffer slightly larger
     # we can use 3 times `memory_size` for buffers
     buffer_size = 3 * memory_size // (len(tmp_files) + 2)
+    for i, f in enumerate(tmp_files):
+        f = open(f.name, 'a+b')
+        f.seek(0)
+        tmp_files[i] = f
+
     generators = [read_content(f, batch_size=buffer_size) for f in tmp_files]
     write_content(fout, heapq.merge(*generators), batch_size=2 * buffer_size)
     for f in tmp_files:
@@ -69,10 +74,7 @@ def merge_sort_k_blocks_two_passes(fin: io.BufferedIOBase, fout: io.BufferedIOBa
         for i in range(0, len(tmp_files), larger_blocks_count):
             larger_f = tmp_file()
             _merge_blocks(tmp_files[i:min(len(tmp_files), i + larger_blocks_count)], larger_f, memory_size)
-            larger_f.seek(0)
+            larger_f.close()
             larger_tmp_files.append(larger_f)
-
-        for tmp_f in tmp_files:
-            tmp_f.close()
 
     _merge_blocks(larger_tmp_files, fout, memory_size)

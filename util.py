@@ -1,7 +1,13 @@
 import os
-import tempfile
+from tempfile import TemporaryDirectory
+import uuid
 
 
-# By default TemporaryFile creates file in /tmp which is relatively small
-def tmp_file(**kwargs):
-    return tempfile.TemporaryFile(dir=os.getcwd(), **kwargs)
+_dir = TemporaryDirectory(dir=os.getcwd())
+_dir_name = _dir.name
+
+
+# TemporaryFile is not used because we need to reopen files
+# NamedTemporaryFile also doesn't guarantee that file may be reopened
+def tmp_file():
+    return open(os.path.join(_dir_name, uuid.uuid4().hex), 'w+b')
